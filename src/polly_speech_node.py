@@ -1,0 +1,123 @@
+#!/usr/bin/python
+#-*- encoding: utf8 -*-
+
+import rospy
+import actionlib
+import boto3
+import yaml
+import pyaudio
+import tempfile
+import threading
+import json
+from ctypes import *
+import contextlib
+from std_msgs.msg import String
+from polly_speech.msg import SpeechAction, SpeechResult, SpeechFeedback
+
+VOWELS = ['@', 'a', 'e', 'E', 'i', 'o', 'O', 'u']
+
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+def py_error_handler(filename, line, function, err, fmt):
+    pass
+c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
+@contextlib.contextmanager
+def noalsaerr():
+    asound = cdll.LoadLibrary('libasound.so')
+    asound.snd_lib_error_set_handler(c_error_handler)
+    yield
+    asound.snd_lib_error_set_handler(None)
+
+class PollySpeechNode:
+    def __init__(self):
+        try:
+            config_file = rospy.get_param('~config_file')
+        except:
+            rospy.logerr('please set param ~config_file...')
+            exit(-1)
+
+        with open(config_file) as f:
+            data = yaml.load(f)
+
+        with noalsaerr():
+            self.p = pyaudio.PyAudio()
+                    
+        self.client = boto3.client('polly',
+            region_name=data['region'],
+            aws_access_key_id=data['aws_access_key_id'],
+            aws_secret_access_key=data['aws_secret_access_key'],
+            endpoint_url="https://polly.us-east-1.amazonaws.com")
+
+        self.pub_vowels = rospy.Publisher('lipsync_vowel', String, queue_size=10)
+        self.speech_server = actionlib.SimpleActionServer('speech_action', SpeechAction,
+            execute_cb=self.execute_speech_callback, auto_start=False)
+        self.speech_server.start()
+
+        rospy.loginfo('%s initialized.'%rospy.get_name())
+        rospy.spin()
+
+    def execute_speech_callback(self, goal):
+        result = SpeechResult()
+        feedback = SpeechFeedback()
+
+        resp = self.client.synthesize_speech(OutputFormat="json", Text=goal.text, SpeechMarkTypes=['viseme'], TextType="text", VoiceId="Joanna")
+        with open(tempfile.gettempdir() + '/polly_wave.txt', 'w') as f:
+            f.write(resp['AudioStream'].read())
+            f.close()
+
+        viseme_data = []
+        with open(tempfile.gettempdir() + '/polly_wave.txt', 'r') as f:
+            for line in f:
+                viseme = json.loads(line)
+                if viseme['value'] in VOWELS:
+                    viseme_data.append([viseme['value'], viseme['time']])
+
+        # print viseme_data
+
+        resp = self.client.synthesize_speech(OutputFormat="pcm", Text=goal.text, TextType="text", VoiceId="Joanna")
+        with open(tempfile.gettempdir() + '/polly_wave.wav', 'w') as f:
+            f.write(resp['AudioStream'].read())
+            f.close()
+
+        stream = self.p.open(
+            format=self.p.get_format_from_width(2),
+            channels=1,
+            rate=16000,
+            output=True)
+
+        th = threading.Thread(target=self.handle_pub_viseme, args=(viseme_data,))
+        th.start()
+        with open(tempfile.gettempdir() + '/polly_wave.wav', 'rb') as pcm_file:
+            data = pcm_file.read(1024)
+
+            while data != '':
+                stream.write(data)
+                data = pcm_file.read(1024)
+                feedback.is_speaking = True
+                self.speech_server.publish_feedback(feedback)
+        rospy.sleep(0.5)
+        th.join()
+
+        stream.stop_stream()
+        stream.close()
+
+        result.result = True
+        self.speech_server.set_succeeded(result)
+
+    def handle_pub_viseme(self, args):
+        viseme_data = args
+
+        index = 0
+        rospy.sleep(viseme_data[index][1] / 1000.0)
+        while not rospy.is_shutdown():
+            self.pub_vowels.publish(viseme_data[index][0])
+            index = index + 1
+            if index >= len(viseme_data):
+                break
+            rospy.sleep((viseme_data[index][1] - viseme_data[index-1][1]) / 1000.0)
+
+if __name__ == '__main__':
+    rospy.init_node('polly_speech_node', anonymous=False)
+    try:
+        m = PollySpeechNode();
+    except rospy.ROSInterruptException: pass

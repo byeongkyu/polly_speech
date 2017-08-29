@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>polly_speech</name>
+    <version>1.0.0</version>
+    <description>The polly_speech package</description>
+    <maintainer email="b.ahn@auckland.ac.nz">Byeong-Kyu Ahn</maintainer>
+    <author email="b.ahn@auckland.ac.nz">Byeong-Kyu Ahn</author>
+    <license>BSD</license>
+
+    <url type="repository">https://stash.auckland.ac.nz/users/bahn915/repos/polly_speech</url>
+
+    <buildtool_depend>catkin</buildtool_depend>
+    <depend>actionlib</depend>
+    <depend>rospy</depend>
+
+    <export>
+    </export>
+</package>
