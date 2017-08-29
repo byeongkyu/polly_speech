@@ -4,9 +4,10 @@
 
 polly_speech package is text-to-speech engine using [Amazon Polly]. It support publish visemes that can using lip-sync for robots.
 
-**Author(s): Byeong-Kyu Ahn </br>
-Maintainer: Byeong-Kyu Ahn, b.ahn@auckland.ac.nz  </br>
+**Author(s): Byeong-Kyu Ahn <br/>
+Maintainer: Byeong-Kyu Ahn, b.ahn@auckland.ac.nz  <br/>
 Affiliation: Robotics Group, The Unversity of Auckland**
+
 
 ## Installation
 
