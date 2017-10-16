@@ -12,6 +12,7 @@
     <buildtool_depend>catkin</buildtool_depend>
     <depend>actionlib</depend>
     <depend>rospy</depend>
+    <depend>message_generation</depend>
 
     <export>
     </export>
