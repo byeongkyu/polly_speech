@@ -11,7 +11,7 @@ import threading
 import json
 from ctypes import *
 import contextlib
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from polly_speech.msg import SpeechAction, SpeechResult, SpeechFeedback
 
 VOWELS = ['@', 'a', 'e', 'E', 'i', 'o', 'O', 'u']
@@ -41,15 +41,16 @@ class PollySpeechNode:
 
         with noalsaerr():
             self.p = pyaudio.PyAudio()
-                    
+
         self.client = boto3.client('polly',
             region_name=data['region'],
             aws_access_key_id=data['aws_access_key_id'],
             aws_secret_access_key=data['aws_secret_access_key'],
             endpoint_url="https://polly.us-east-1.amazonaws.com")
 
+        self.pub_status = rospy.Publisher('u_is_speaking', Bool, queue_size=10)
         self.pub_vowels = rospy.Publisher('lipsync_vowel', String, queue_size=10)
-        self.speech_server = actionlib.SimpleActionServer('speech_action', SpeechAction,
+        self.speech_server = actionlib.SimpleActionServer('internal_speech', SpeechAction,
             execute_cb=self.execute_speech_callback, auto_start=False)
         self.speech_server.start()
 
@@ -79,6 +80,8 @@ class PollySpeechNode:
             f.write(resp['AudioStream'].read())
             f.close()
 
+        self.pub_status.publish(True)
+
         stream = self.p.open(
             format=self.p.get_format_from_width(2),
             channels=1,
@@ -100,6 +103,8 @@ class PollySpeechNode:
 
         stream.stop_stream()
         stream.close()
+
+        self.pub_status.publish(False)
 
         result.result = True
         self.speech_server.set_succeeded(result)
