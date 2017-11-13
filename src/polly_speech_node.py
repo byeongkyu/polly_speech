@@ -61,7 +61,8 @@ class PollySpeechNode:
         result = SpeechResult()
         feedback = SpeechFeedback()
 
-        resp = self.client.synthesize_speech(OutputFormat="json", Text=goal.text, SpeechMarkTypes=['viseme'], TextType="text", VoiceId="Joanna")
+        speech_text = '<speak><prosody rate="slow" pitch="+20%">' + goal.text + '</prosody></speak>'
+        resp = self.client.synthesize_speech(OutputFormat="json", Text=speech_text, SpeechMarkTypes=['viseme'], TextType="ssml", VoiceId="Joanna")
         with open(tempfile.gettempdir() + '/polly_wave.txt', 'w') as f:
             f.write(resp['AudioStream'].read())
             f.close()
@@ -75,7 +76,7 @@ class PollySpeechNode:
 
         # print viseme_data
 
-        resp = self.client.synthesize_speech(OutputFormat="pcm", Text=goal.text, TextType="text", VoiceId="Joanna")
+        resp = self.client.synthesize_speech(OutputFormat="pcm", Text=speech_text, TextType="ssml", VoiceId="Joanna")
         with open(tempfile.gettempdir() + '/polly_wave.wav', 'w') as f:
             f.write(resp['AudioStream'].read())
             f.close()
@@ -104,6 +105,7 @@ class PollySpeechNode:
         stream.stop_stream()
         stream.close()
 
+        self.pub_vowels.publish('N')
         self.pub_status.publish(False)
 
         result.result = True

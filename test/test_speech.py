@@ -16,7 +16,7 @@ def func_active():
     pass
 
 def main(say_text):
-    client = actionlib.SimpleActionClient('speech_action', SpeechAction)
+    client = actionlib.SimpleActionClient('internal_speech', SpeechAction)
     client.wait_for_server()
 
     goal = SpeechGoal()
