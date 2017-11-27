@@ -16,6 +16,11 @@ from polly_speech.msg import SpeechAction, SpeechResult, SpeechFeedback
 
 VOWELS = ['@', 'a', 'e', 'E', 'i', 'o', 'O', 'u']
 
+POLLY_VOICE = { 'en-US': 'Joanna',
+                'ko-KR': 'Seoyeon',
+                'en-AU': 'Nicole'
+}
+
 ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
 def py_error_handler(filename, line, function, err, fmt):
     pass
@@ -48,6 +53,12 @@ class PollySpeechNode:
             aws_secret_access_key=data['aws_secret_access_key'],
             endpoint_url="https://polly.us-east-1.amazonaws.com")
 
+        try:
+            self.lang = rospy.get_param('~lang')
+            self.voice = POLLY_VOICE[self.lang]
+        except KeyError as e:
+            self.voice = 'Joanna'
+
         self.pub_status = rospy.Publisher('u_is_speaking', Bool, queue_size=10)
         self.pub_vowels = rospy.Publisher('lipsync_vowel', String, queue_size=10)
         self.speech_server = actionlib.SimpleActionServer('internal_speech', SpeechAction,
@@ -61,8 +72,8 @@ class PollySpeechNode:
         result = SpeechResult()
         feedback = SpeechFeedback()
 
-        speech_text = '<speak><prosody rate="slow" pitch="+20%">' + goal.text + '</prosody></speak>'
-        resp = self.client.synthesize_speech(OutputFormat="json", Text=speech_text, SpeechMarkTypes=['viseme'], TextType="ssml", VoiceId="Joanna")
+        speech_text = '<speak><prosody rate="medium" pitch="+10%">' + goal.text + '</prosody></speak>'
+        resp = self.client.synthesize_speech(OutputFormat="json", Text=speech_text, SpeechMarkTypes=['viseme'], TextType="ssml", VoiceId=self.voice)
         with open(tempfile.gettempdir() + '/polly_wave.txt', 'w') as f:
             f.write(resp['AudioStream'].read())
             f.close()
@@ -76,7 +87,7 @@ class PollySpeechNode:
 
         # print viseme_data
 
-        resp = self.client.synthesize_speech(OutputFormat="pcm", Text=speech_text, TextType="ssml", VoiceId="Joanna")
+        resp = self.client.synthesize_speech(OutputFormat="pcm", Text=speech_text, TextType="ssml", VoiceId=self.voice)
         with open(tempfile.gettempdir() + '/polly_wave.wav', 'w') as f:
             f.write(resp['AudioStream'].read())
             f.close()
