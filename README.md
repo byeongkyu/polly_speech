@@ -24,7 +24,7 @@ Affiliation: Robotics Research Group, The Unversity of Auckland**
 To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
 
         $ cd catkin_ws/src
-        $ git clone https://bahn915@stash.auckland.ac.nz/scm/~bahn915/polly_speech.git
+        $ git clone https://github.com/byeongkyu/polly_speech.git
         $ catkin build
 
 ## Setup on AWS
