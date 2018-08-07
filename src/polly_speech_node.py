@@ -16,11 +16,6 @@ from polly_speech.msg import SpeechAction, SpeechResult, SpeechFeedback
 
 VOWELS = ['@', 'a', 'e', 'E', 'i', 'o', 'O', 'u']
 
-POLLY_VOICE = { 'en-US': 'Joanna',
-                'ko-KR': 'Seoyeon',
-                'en-AU': 'Nicole'
-}
-
 ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
 def py_error_handler(filename, line, function, err, fmt):
     pass
@@ -54,10 +49,15 @@ class PollySpeechNode:
             endpoint_url="https://polly.us-east-1.amazonaws.com")
 
         try:
-            self.lang = rospy.get_param('~lang')
-            self.voice = POLLY_VOICE[self.lang]
+            self.lang = data['lang']
+            self.voice = data['voice']
+            self.default_pitch = data['default_pitch']
         except KeyError as e:
+            self.lang = 'en-US'
             self.voice = 'Joanna'
+            self.default_pitch = '+20%'
+
+        rospy.loginfo('language [%s], voice [%s], default pitch [%s].'%(self.lang, self.voice, self.default_pitch))
 
         self.pub_status = rospy.Publisher('u_is_speaking', Bool, queue_size=10)
         self.pub_vowels = rospy.Publisher('lipsync_vowel', String, queue_size=10)
@@ -72,7 +72,7 @@ class PollySpeechNode:
         result = SpeechResult()
         feedback = SpeechFeedback()
 
-        speech_text = '<speak><prosody rate="medium" pitch="+20%">' + goal.text + '</prosody></speak>'
+        speech_text = '<speak><prosody rate="medium" pitch="%s">'%self.default_pitch + goal.text + '</prosody></speak>'
         resp = self.client.synthesize_speech(OutputFormat="json", Text=speech_text, SpeechMarkTypes=['viseme'], TextType="ssml", VoiceId=self.voice)
         with open(tempfile.gettempdir() + '/polly_wave.txt', 'w') as f:
             f.write(resp['AudioStream'].read())
