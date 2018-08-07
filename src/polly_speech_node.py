@@ -85,8 +85,6 @@ class PollySpeechNode:
                 if viseme['value'] in VOWELS:
                     viseme_data.append([viseme['value'], viseme['time']])
 
-        # print viseme_data
-
         resp = self.client.synthesize_speech(OutputFormat="pcm", Text=speech_text, TextType="ssml", VoiceId=self.voice)
         with open(tempfile.gettempdir() + '/polly_wave.wav', 'w') as f:
             f.write(resp['AudioStream'].read())
