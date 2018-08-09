@@ -39,7 +39,7 @@ Just copy config.yaml.template to config.yaml and fill the access information th
 
 ## Usage
 
-        rosrun polly_speech polly_speech_node.py \_config_file:=path_to/config.yaml
+        rosrun polly_speech polly_speech_node.py _config_file:=path_to/config.yaml
 
 
 ## Nodes
