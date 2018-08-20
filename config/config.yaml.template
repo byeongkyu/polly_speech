@@ -4,3 +4,12 @@ region: "us-west-1"
 #[Credentials]
 aws_access_key_id: "<your default access key>"
 aws_secret_access_key: "<your default secret key>"
+
+#[Language]
+# Reference: https://docs.aws.amazon.com/polly/latest/dg/voicelist.html
+lang: "en-US"
+
+#[Voices]
+# Reference: https://docs.aws.amazon.com/polly/latest/dg/voicelist.html
+voice: "Ivy"
+default_pitch: "+0%"
