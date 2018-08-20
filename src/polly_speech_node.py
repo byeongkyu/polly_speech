@@ -72,7 +72,16 @@ class PollySpeechNode:
         result = SpeechResult()
         feedback = SpeechFeedback()
 
-        speech_text = '<speak><prosody rate="medium" pitch="+20%">' + goal.text + '</prosody></speak>'
+        msg_text = goal.text
+        speech_text = ''
+        if msg_text.startswith('$'):
+            msg_text = msg_text.strip('$')
+            lang_code, text_body = msg_text.split('|')
+
+            speech_text = '<speak><prosody rate="medium" pitch="+30%">' + '<lang xml:lang="%s">'%lang_code + text_body + '</lang></prosody></speak>'
+        else:
+            speech_text = '<speak><prosody rate="medium" pitch="+20%">' + msg_text + '</prosody></speak>'
+
         resp = self.client.synthesize_speech(OutputFormat="json", Text=speech_text, SpeechMarkTypes=['viseme'], TextType="ssml", VoiceId=self.voice)
         with open(tempfile.gettempdir() + '/polly_wave.txt', 'w') as f:
             f.write(resp['AudioStream'].read())
