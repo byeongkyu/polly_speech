@@ -101,11 +101,11 @@ class PollySpeechNode:
         th = threading.Thread(target=self.handle_pub_viseme, args=(viseme_data,))
         th.start()
         with open(tempfile.gettempdir() + '/polly_wave.wav', 'rb') as pcm_file:
-            data = pcm_file.read(1024)
+            data = pcm_file.read(100)
 
             while data != '':
                 stream.write(data)
-                data = pcm_file.read(1024)
+                data = pcm_file.read(100)
                 feedback.is_speaking = True
                 self.speech_server.publish_feedback(feedback)
         rospy.sleep(0.2)
