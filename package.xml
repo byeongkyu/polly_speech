@@ -15,6 +15,7 @@
     <depend>message_generation</depend>
     <depend>python-pyaudio</depend>
     <depend>python-yaml</depend>
+    <depend>libasound2-dev</depend>
 
     <export>
     </export>
