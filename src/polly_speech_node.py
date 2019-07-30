@@ -82,10 +82,16 @@ class PollySpeechNode:
         else:
             speech_text = '<speak><prosody rate="medium" pitch="%s">'%self.default_pitch + msg_text + '</prosody></speak>'
 
-        resp = self.client.synthesize_speech(OutputFormat="json", Text=speech_text, SpeechMarkTypes=['viseme'], TextType="ssml", VoiceId=self.voice)
-        with open(tempfile.gettempdir() + '/polly_wave.txt', 'w') as f:
-            f.write(resp['AudioStream'].read())
-            f.close()
+        try:
+            resp = self.client.synthesize_speech(OutputFormat="json", Text=speech_text, SpeechMarkTypes=['viseme'], TextType="ssml", VoiceId=self.voice)
+            with open(tempfile.gettempdir() + '/polly_wave.txt', 'w') as f:
+                f.write(resp['AudioStream'].read())
+                f.close()
+        except self.client.exceptions.InvalidSsmlException as e:
+            rospy.logwarn('Invalid SSML tags are found. Please check the data.')
+            result.result = False
+            self.speech_server.set_succeeded(result)
+            return
 
         viseme_data = []
         with open(tempfile.gettempdir() + '/polly_wave.txt', 'r') as f:
